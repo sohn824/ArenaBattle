@@ -22,6 +22,9 @@ protected:
 	virtual void BeginPlay() override;
 public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+protected:
+	void OnChangeView();
+	virtual void SetCharacterControlData(const class UABCharacterControlData* CharacterControlData) override;
 
 	// Camera Section
 protected:
@@ -33,15 +36,21 @@ protected:
 	// Input Section
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputMappingContext> DefaultMappingContext;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> JumpAction;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> MoveAction;
+	TObjectPtr<class UInputAction> ChangeViewAction;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> LookAction;
+	TObjectPtr<class UInputAction> ShoulderMoveAction;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> ShoulderLookAction;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> QuaterMoveAction;
 
 	// InputAction과 매핑할 함수들
-	void Move(const FInputActionValue& InputActionValue);
-	void Look(const FInputActionValue& InputActionValue);
+	void ShoulderMove(const FInputActionValue& InputActionValue);
+	void ShoulderLook(const FInputActionValue& InputActionValue);
+
+	void QuaterMove(const FInputActionValue& InputActionValue);
+
+	ECharacterControlType CurrentCharacterControlType;
 };

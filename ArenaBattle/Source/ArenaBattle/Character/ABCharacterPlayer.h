@@ -45,12 +45,16 @@ protected:
 	TObjectPtr<class UInputAction> ShoulderLookAction;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> QuaterMoveAction;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> AttackAction;
 
 	// InputAction과 매핑할 함수들
 	void ShoulderMove(const FInputActionValue& InputActionValue);
 	void ShoulderLook(const FInputActionValue& InputActionValue);
 
 	void QuaterMove(const FInputActionValue& InputActionValue);
+
+	void Attack();
 
 	ECharacterControlType CurrentCharacterControlType;
 };

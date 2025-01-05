@@ -8,13 +8,15 @@ AABGameMode::AABGameMode()
 	// GameMode에서 사용할 PlayerController 클래스 설정
 	PlayerControllerClass = AABPlayerController::StaticClass();
 
-	// 디폴트 3인칭 캐릭터 클래스 가져오기
-	static ConstructorHelpers::FClassFinder<APawn> ThirdPersonClassRef(
-		TEXT("/Script/ArenaBattle.ABCharacterPlayer"));
-	if (ThirdPersonClassRef.Class)
+	// 캐릭터 클래스 가져오기
+	// (블루프린트 클래스를 가져올 경우 레퍼런스 복사 -> 'Script/Engine.Blueprint' 부분 제거 -> 뒤에 _C 붙이기)
+	// "/Script/Engine.Blueprint'/Game/ArenaBattle/Blueprint/BP_ABCharacterPlayer.BP_ABCharacterPlayer'"
+	static ConstructorHelpers::FClassFinder<APawn> PawnClassRef(
+		TEXT("/Game/ArenaBattle/Blueprint/BP_ABCharacterPlayer.BP_ABCharacterPlayer_C"));
+	if (PawnClassRef.Class)
 	{
 		// GameMode에서 사용할 DefaultPawn 클래스 설정
-		DefaultPawnClass = ThirdPersonClassRef.Class;
+		DefaultPawnClass = PawnClassRef.Class;
 	}
 }
 

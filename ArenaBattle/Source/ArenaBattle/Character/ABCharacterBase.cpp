@@ -6,6 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AnimMontage.h"
 #include "ABComboActionData.h"
+#include "Physics/ABCollision.h"
+#include "Engine/DamageEvents.h"
 
 // Sets default values
 AABCharacterBase::AABCharacterBase()
@@ -17,7 +19,7 @@ AABCharacterBase::AABCharacterBase()
 
 	// CapsuleComponent
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f); // Radius, HalfHeight
-	GetCapsuleComponent()->SetCollisionProfileName(TEXT("Pawn"));
+	GetCapsuleComponent()->SetCollisionProfileName(CPROFILE_ABCAPSULE); // TEXT("ABCapsule")
 
 	// CharacterMovementComponent
 	GetCharacterMovement()->bOrientRotationToMovement = true; // RotationRate값이 움직이는 속도에 영향을 주도록
@@ -31,7 +33,7 @@ AABCharacterBase::AABCharacterBase()
 	// SkeletalMeshComponent
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -100.f), FRotator(0.f, -90.f, 0.f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-	GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
+	GetMesh()->SetCollisionProfileName(TEXT("NoCollision")); // CapsuleComponent가 충돌 판정을 수행하므로 SkeletalMesh는 충돌 감지 안하도록
 
 	// SkeletalMeshComponent에 SkeletalMesh와 AnimInstance 설정
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CharacterMeshRef(
@@ -48,6 +50,7 @@ AABCharacterBase::AABCharacterBase()
 		GetMesh()->SetAnimInstanceClass(AnimInstanceClassRef.Class);
 	}
 
+	// Character Control Data
 	static ConstructorHelpers::FObjectFinder<UABCharacterControlData> ShoulderViewDataRef(
 		TEXT("/Script/ArenaBattle.ABCharacterControlData'/Game/ArenaBattle/CharacterControlData/ABC_ShoulderView.ABC_ShoulderView'"));
 	if (ShoulderViewDataRef.Object)
@@ -60,6 +63,30 @@ AABCharacterBase::AABCharacterBase()
 	if (QuaterViewDataRef.Object)
 	{
 		CharacterControlDataMap.Add(ECharacterControlType::QuaterView, QuaterViewDataRef.Object);
+	}
+
+	// Combo Action AnimMontage
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ComboActionMontageRef(
+		TEXT("/Script/Engine.AnimMontage'/Game/ArenaBattle/Animation/AM_ComboAttack.AM_ComboAttack'"));
+	if (ComboActionMontageRef.Object)
+	{
+		ComboActionMontage = ComboActionMontageRef.Object;
+	}
+
+	// Dead AnimMontage
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> DeadMontageRef(
+		TEXT("/Script/Engine.AnimMontage'/Game/ArenaBattle/Animation/AM_Dead.AM_Dead'"));
+	if (DeadMontageRef.Object)
+	{
+		DeadMontage = DeadMontageRef.Object;
+	}
+
+	// Combo Action Data (콤보 액션에 필요한 변수들 모음 - UPrimaryDataAsset 형식)
+	static ConstructorHelpers::FObjectFinder<UABComboActionData> ComboActionDataRef(
+		TEXT("/Script/ArenaBattle.ABComboActionData'/Game/ArenaBattle/CharacterActionData/ABA_ComboAttack.ABA_ComboAttack'"));
+	if (ComboActionDataRef.Object)
+	{
+		ComboActionData = ComboActionDataRef.Object;
 	}
 }
 
@@ -163,4 +190,71 @@ void AABCharacterBase::ComboTimerProc()
 
 		bIsNextComboCommandInputed = false;
 	}
+}
+
+// 공격 판정을 하는 Animation Notify에서 호출될 콜백 함수
+void AABCharacterBase::AttackHitCheck()
+{
+	// 충돌 지점과 해당 지점에서의 여러 정보를 포함하는 구조체
+	// SweepSingleByChannel()과 같은 함수에 전달하면 충돌 판정을 하고 관련 정보를 반환함
+	FHitResult OutHitResult;
+
+	// 충돌 함수에 전달되는 매개변수 구조체
+	FCollisionQueryParams CollisionParams(SCENE_QUERY_STAT(Attack), false, this);
+
+	const float AttackRange = 40.f;
+	const float AttackRadius = 50.f;
+	const float AttackDamage = 30.f;
+	const FVector StartPos = GetActorLocation()
+		+ GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
+	const FVector EndPos = StartPos + GetActorForwardVector() * AttackRange;
+
+	// 특정 채널을 사용하여 충돌 검사를 수행
+	// StartPos에서 EndPos까지 지정된 충돌체를 이동시키면서 충돌을 감지하고
+	// FHitResult 구조체에 충돌 관련 정보들을 담아 반환함
+	bool bHitSucceed = GetWorld()->SweepSingleByChannel(OutHitResult, StartPos, EndPos,
+		FQuat::Identity, CCHANNEL_ABACTION, FCollisionShape::MakeSphere(AttackRadius), CollisionParams);
+	if (bHitSucceed)
+	{
+		FDamageEvent DamageEvent;
+		// 맞은 액터의 TakeDamage 함수 호출
+		OutHitResult.GetActor()->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+	}
+
+#ifdef ENABLE_DRAW_DEBUG
+	// 충돌 디버깅용
+	FVector CapsuleOrigin = StartPos + (EndPos - StartPos) * 0.5f;
+	const float CapsuleHalfHeight = AttackRange * 0.5f;
+	FColor DrawColor = bHitSucceed ? FColor::Green : FColor::Red;
+
+	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius,
+		FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.f);
+#endif //ENABLE_DRAW_DEBUG
+}
+
+float AABCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	// EventInstigator - 데미지를 가한 플레이어 (컨트롤러)
+	// DamageCauser - 데미지를 가한 액터 (플레이어가 빙의한 폰이나 그것이 발사한 발사체 등등)
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	SetDead();
+
+	float FinalDamageAmount = DamageAmount;
+	// 최종으로 받은 데미지 반환
+	return FinalDamageAmount;
+}
+
+void AABCharacterBase::SetDead()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	SetActorEnableCollision(false);
+	PlayDeadAnimation();
+}
+
+void AABCharacterBase::PlayDeadAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->StopAllMontages(0.f);
+	AnimInstance->Montage_Play(DeadMontage, 1.f);
 }

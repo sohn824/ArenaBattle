@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interface/ABAnimationAttackInterface.h"
+#include "Interface/ABCharacterWidgetInterface.h"
 #include "ABCharacterBase.generated.h"
 
 UENUM()
@@ -15,12 +16,17 @@ enum class ECharacterControlType : uint8
 };
 
 UCLASS()
-class ARENABATTLE_API AABCharacterBase : public ACharacter, public IABAnimationAttackInterface
+class ARENABATTLE_API AABCharacterBase
+	: public ACharacter
+	, public IABAnimationAttackInterface
+	, public IABCharacterWidgetInterface
 {
 	GENERATED_BODY()
 
 public:
 	AABCharacterBase();
+
+	virtual void PostInitializeComponents() override;
 
 protected:
 	virtual void SetCharacterControlData(const class UABCharacterControlData* CharacterControlData);
@@ -28,7 +34,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = CharacterControl, Meta = (AllowPrivateAccess = "true"))
 	TMap<ECharacterControlType, class UABCharacterControlData*> CharacterControlDataMap;
 
-	// 애니메이션 몽타주를 이용한 콤보 프로세스 섹션
+/// Combo Process Section
 protected:
 	void ComboActionProcess();
 
@@ -52,18 +58,29 @@ protected:
 	FTimerHandle ComboTimerHandle;
 	bool bIsNextComboCommandInputed = false;
 
-	// Attack & Damage Section
+/// Attack & Damage Section
 protected:
-	virtual void AttackHitCheck() override;
+	virtual void AttackHitCheck() override; // UABAnimationAttackInterface
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 		AController* EventInstigator, AActor* DamageCauser) override;
-
-	// Dead Section
+/// Dead Section
 protected:
 	// 애니메이션 몽타주는 에디터에서 블루프린트로 설정하도록
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> DeadMontage;
 
 	virtual void SetDead();
 	void PlayDeadAnimation();
+
+/// Character Stat Section
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UABCharacterStatComponent> StatComponent;
+
+/// UI Widget Section
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widget, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UABWidgetComponent> HpBarComponent;
+
+	virtual void SetupCharacterWidget(class UABUserWidget* InUserWidget) override; //IABCharacterWidgetInterface
 };

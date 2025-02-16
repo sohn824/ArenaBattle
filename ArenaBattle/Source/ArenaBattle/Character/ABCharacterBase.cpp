@@ -8,6 +8,9 @@
 #include "ABComboActionData.h"
 #include "Physics/ABCollision.h"
 #include "Engine/DamageEvents.h"
+#include "CharacterStat/ABCharacterStatComponent.h"
+#include "UI/ABWidgetComponent.h"
+#include "UI/ABHpBarWidget.h"
 
 // Sets default values
 AABCharacterBase::AABCharacterBase()
@@ -88,6 +91,33 @@ AABCharacterBase::AABCharacterBase()
 	{
 		ComboActionData = ComboActionDataRef.Object;
 	}
+
+	// Character Stat Component
+	StatComponent = CreateDefaultSubobject<UABCharacterStatComponent>(TEXT("StatComponent"));
+
+	// Hp Bar UI Widget Component
+	HpBarComponent = CreateDefaultSubobject<UABWidgetComponent>(TEXT("HpBarComponent"));
+	// 캐릭터의 스켈레탈 메시를 부모로 설정
+	HpBarComponent->SetupAttachment(GetMesh());
+	HpBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 230.f));
+	// 클래스 정보 설정
+	static ConstructorHelpers::FClassFinder<UUserWidget> HpBarWidgetClassRef(TEXT("/Game/ArenaBattle/UI/WBP_HpBar.WBP_HpBar_C"));
+	if (HpBarWidgetClassRef.Class)
+	{
+		HpBarComponent->SetWidgetClass(HpBarWidgetClassRef.Class);
+		// 월드 좌표가 아닌 스크린 좌표로 설정 (2D)
+		HpBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		HpBarComponent->SetDrawSize(FVector2D(150.f, 15.f));
+		HpBarComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+
+void AABCharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	// Hp가 0이 됐을 때 호출될 콜백 델리게이트에 Dead 애니메이션 재생 함수를 등록해둔다.
+	StatComponent->OnHpZeroCallback.AddUObject(this, &AABCharacterBase::SetDead);
 }
 
 void AABCharacterBase::SetCharacterControlData(const UABCharacterControlData* CharacterControlData)
@@ -238,9 +268,8 @@ float AABCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	// DamageCauser - 데미지를 가한 액터 (플레이어가 빙의한 폰이나 그것이 발사한 발사체 등등)
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	SetDead();
-
 	float FinalDamageAmount = DamageAmount;
+	StatComponent->ApplyDamage(FinalDamageAmount);
 	// 최종으로 받은 데미지 반환
 	return FinalDamageAmount;
 }
@@ -250,6 +279,7 @@ void AABCharacterBase::SetDead()
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 	SetActorEnableCollision(false);
 	PlayDeadAnimation();
+	HpBarComponent->SetHiddenInGame(true);
 }
 
 void AABCharacterBase::PlayDeadAnimation()
@@ -257,4 +287,20 @@ void AABCharacterBase::PlayDeadAnimation()
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->StopAllMontages(0.f);
 	AnimInstance->Montage_Play(DeadMontage, 1.f);
+}
+
+void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
+{
+	UABHpBarWidget* HpBarWidget = Cast<UABHpBarWidget>(InUserWidget);
+	if (HpBarWidget)
+	{
+		const float& MaxHp = StatComponent->GetMaxHp();
+		const float& CurrentHp = StatComponent->GetCurrentHp();
+		HpBarWidget->SetMaxHp(MaxHp);
+		HpBarWidget->UpdateHpBar(CurrentHp);
+
+		// HpChanged 콜백이 호출될 때마다 HpBarWidget도 같이 업데이트하도록
+		// UABHpBarWidget::UpdateHpBar 함수도 델리게이트에 등록
+		StatComponent->OnHpChangedCallback.AddUObject(HpBarWidget, &UABHpBarWidget::UpdateHpBar);
+	}
 }

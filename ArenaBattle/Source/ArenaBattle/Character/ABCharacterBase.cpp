@@ -11,6 +11,7 @@
 #include "CharacterStat/ABCharacterStatComponent.h"
 #include "UI/ABWidgetComponent.h"
 #include "UI/ABHpBarWidget.h"
+#include "Item/ABWeaponItemData.h"
 
 // Sets default values
 AABCharacterBase::AABCharacterBase()
@@ -110,6 +111,19 @@ AABCharacterBase::AABCharacterBase()
 		HpBarComponent->SetDrawSize(FVector2D(150.f, 15.f));
 		HpBarComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+
+	// Item Function Delegates
+	TakeItemDelegates.Add(FOnTakeItemDelegateWrapper(
+		FOnTakeItemDelegate::CreateUObject(this, &AABCharacterBase::EquipWeapon)));
+	TakeItemDelegates.Add(FOnTakeItemDelegateWrapper(
+		FOnTakeItemDelegate::CreateUObject(this, &AABCharacterBase::DrinkPotion)));
+	TakeItemDelegates.Add(FOnTakeItemDelegateWrapper(
+		FOnTakeItemDelegate::CreateUObject(this, &AABCharacterBase::ReadScroll)));
+
+	// Weapon
+	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
+	// 소켓 - Skeletal Mesh에 특정 위치 pivot을 이름을 붙여 지정할 수 있는 기능
+	WeaponMesh->SetupAttachment(GetMesh(), TEXT("hand_rSocket"));
 }
 
 void AABCharacterBase::PostInitializeComponents()
@@ -303,4 +317,50 @@ void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
 		// UABHpBarWidget::UpdateHpBar 함수도 델리게이트에 등록
 		StatComponent->OnHpChangedCallback.AddUObject(HpBarWidget, &UABHpBarWidget::UpdateHpBar);
 	}
+}
+
+void AABCharacterBase::TakeItem(UABItemDataBase* InItemData)
+{
+	if (InItemData == nullptr)
+	{
+		return;
+	}
+
+	// 아이템 타입에 맞는 함수 실행
+	uint8 ArrayIdx = (uint8)InItemData->ItemType;
+	if (TakeItemDelegates.IsValidIndex(ArrayIdx) == false)
+	{
+		return;
+	}
+
+	TakeItemDelegates[ArrayIdx].Delegate.ExecuteIfBound(InItemData);
+}
+
+void AABCharacterBase::EquipWeapon(UABItemDataBase* InItemData)
+{
+	UABWeaponItemData* WeaponItemData = Cast<UABWeaponItemData>(InItemData);
+	if (WeaponItemData == nullptr)
+	{
+		return;
+	}
+
+	// WeaponItemData의 WeaponMesh는 메모리 절감을 위해
+	// TSoftObjectPtr로 소프트 레퍼런싱 되어 있으므로
+	// 메모리에 아직 안 올라가 있다면 로딩시켜줌
+	if (WeaponItemData->WeaponMesh.IsPending())
+	{
+		WeaponItemData->WeaponMesh.LoadSynchronous();
+	}
+
+	WeaponMesh->SetSkeletalMesh(WeaponItemData->WeaponMesh.Get());
+}
+
+void AABCharacterBase::DrinkPotion(UABItemDataBase* InItemData)
+{
+	UE_LOG(LogTemp, Log, TEXT("Drink Potion"));
+}
+
+void AABCharacterBase::ReadScroll(UABItemDataBase* InItemData)
+{
+	UE_LOG(LogTemp, Log, TEXT("Read Scroll"));
 }

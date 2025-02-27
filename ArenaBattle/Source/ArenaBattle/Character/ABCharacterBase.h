@@ -1,11 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interface/ABAnimationAttackInterface.h"
 #include "Interface/ABCharacterWidgetInterface.h"
+#include "Interface/ABCharacterItemInterface.h"
 #include "ABCharacterBase.generated.h"
 
 UENUM()
@@ -15,11 +14,25 @@ enum class ECharacterControlType : uint8
 	QuaterView,
 };
 
+// 아이템을 획득했을 때 호출할 콜백함수 Delegate 선언
+DECLARE_DELEGATE_OneParam(FOnTakeItemDelegate, class UABItemDataBase*);
+// Delegate를 배열에 담아 관리하기 위해 구조체로 감싼다.
+USTRUCT(BlueprintType)
+struct FOnTakeItemDelegateWrapper
+{
+	GENERATED_BODY()
+	FOnTakeItemDelegateWrapper() {}
+	FOnTakeItemDelegateWrapper(const FOnTakeItemDelegate& InDelegate) : Delegate(InDelegate) {}
+
+	FOnTakeItemDelegate Delegate;
+};
+
 UCLASS()
 class ARENABATTLE_API AABCharacterBase
 	: public ACharacter
 	, public IABAnimationAttackInterface
 	, public IABCharacterWidgetInterface
+	, public IABCharacterItemInterface
 {
 	GENERATED_BODY()
 
@@ -83,4 +96,21 @@ protected:
 	TObjectPtr<class UABWidgetComponent> HpBarComponent;
 
 	virtual void SetupCharacterWidget(class UABUserWidget* InUserWidget) override; //IABCharacterWidgetInterface
+
+/// Item Section
+protected:
+	UPROPERTY()
+	TArray<FOnTakeItemDelegateWrapper> TakeItemDelegates;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Equipment, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class USkeletalMeshComponent> WeaponMesh;
+
+	virtual void TakeItem(class UABItemDataBase* InItemData) override; //IABCharacterItemInterface
+
+	// Weapon
+	virtual void EquipWeapon(class UABItemDataBase* InItemData);
+	// Potion
+	virtual void DrinkPotion(class UABItemDataBase* InItemData);
+	// Scroll
+	virtual void ReadScroll(class UABItemDataBase* InItemData);
 };

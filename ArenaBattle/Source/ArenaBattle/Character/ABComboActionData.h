@@ -1,14 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "ABComboActionData.generated.h"
 
-/**
- * 
- */
+/*
+ 콤보 액션 구현에 필요한 데이터 모음
+*/
 UCLASS()
 class ARENABATTLE_API UABComboActionData : public UPrimaryDataAsset
 {

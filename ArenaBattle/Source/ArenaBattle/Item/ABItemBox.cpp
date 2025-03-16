@@ -4,6 +4,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Physics/ABCollision.h"
 #include "Interface/ABCharacterItemInterface.h"
+#include "Engine/AssetManager.h"
+#include "Item/ABItemDataBase.h"
 
 AABItemBox::AABItemBox()
 {
@@ -39,6 +41,26 @@ AABItemBox::AABItemBox()
         ParticleEffect->SetTemplate(ParticleRef.Object);
         ParticleEffect->bAutoActivate = false;
     }
+}
+
+void AABItemBox::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+
+    UAssetManager& AssetManager = UAssetManager::Get();
+
+    TArray<FPrimaryAssetId> AssetIdList;
+    AssetManager.GetPrimaryAssetIdList(TEXT("ABItemData"), AssetIdList);
+    ensure(AssetIdList.Num() > 0);
+    int32 RandomIndex = FMath::RandRange(0, AssetIdList.Num() - 1);
+    FSoftObjectPtr AssetPtr(AssetManager.GetPrimaryAssetPath(AssetIdList[RandomIndex]));
+    // SoftObjectPtr이므로 아직 로딩이 되지 않았다면 로드시켜줌
+    if (AssetPtr.IsPending())
+    {
+        AssetPtr.LoadSynchronous();
+    }
+    ItemData = Cast<UABItemDataBase>(AssetPtr.Get());
+    ensure(ItemData != nullptr);
 }
 
 void AABItemBox::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,

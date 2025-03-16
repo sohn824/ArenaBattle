@@ -12,10 +12,15 @@ class ARENABATTLE_API AABItemBox : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AABItemBox();
 
+public:
+	FORCEINLINE class UBoxComponent* GetTriggerBox() { return TriggerBox; }
+
 protected:
+	virtual void PostInitializeComponents() override;
+
+	// UBoxComponent의 Overlap 이벤트에 bind 해줄 함수
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor, UPrimitiveComponent* OtherComp,

@@ -21,8 +21,6 @@ AABItemBox::AABItemBox()
 
     TriggerBox->SetCollisionProfileName(CPROFILE_ABTRIGGER); // TEXT("ABTrigger")
     TriggerBox->SetBoxExtent(FVector(40.f, 42.f, 30.f));
-    // TriggerBox에 다른 Component가 Overlap될 때 호출될 Delegate 연결
-    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AABItemBox::OnOverlapBegin);
 
     static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshRef(
         TEXT("/Script/Engine.StaticMesh'/Game/ArenaBattle/Environment/Props/SM_Env_Breakables_Box1.SM_Env_Breakables_Box1'"));
@@ -61,6 +59,10 @@ void AABItemBox::PostInitializeComponents()
     }
     ItemData = Cast<UABItemDataBase>(AssetPtr.Get());
     ensure(ItemData != nullptr);
+
+    // TriggerBox에 다른 Component가 Overlap될 때 호출될 Delegate 연결
+    // (Spawn이 완료된 이후에 Delegate가 동작하도록 생성자가 아닌 PostInitializeComponents에서 설정)
+    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AABItemBox::OnOverlapBegin);
 }
 
 void AABItemBox::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,

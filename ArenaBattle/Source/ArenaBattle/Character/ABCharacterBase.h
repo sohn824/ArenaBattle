@@ -86,6 +86,10 @@ protected:
 	void PlayDeadAnimation();
 
 /// Character Stat Section
+public:
+	int32 GetCharacterLevel();
+	void SetCharacterLevel(int32 NewLevel);
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UABCharacterStatComponent> StatComponent;

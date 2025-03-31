@@ -1,35 +1,31 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "CharacterStat/ABCharacterStatComponent.h"
+#include "Game/ABGameSingleton.h"
 
-// Sets default values for this component's properties
 UABCharacterStatComponent::UABCharacterStatComponent()
 {
-	MaxHp = 100.f;
+	CurrentLevel = 1;
 	CurrentHp = 100.f;
 }
 
-
-// Called when the game starts
 void UABCharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentHp = MaxHp;
+	SetCurrentLevelWithStat(CurrentLevel);
+	SetCurrentHp(BaseStat.MaxHp);
 }
 
-float UABCharacterStatComponent::ApplyDamage(float& InDamage)
+void UABCharacterStatComponent::SetCurrentLevelWithStat(int32 NewLevel)
 {
-	const float PrevHp = CurrentHp;
-	InDamage = FMath::Clamp<float>(InDamage, 0.f, InDamage);
-	SetCurrentHp(PrevHp - InDamage);
-
-	return InDamage;
+	const int32 MaxLevel = UABGameSingleton::GetInstance().CharacterMaxLevel;
+	CurrentLevel = FMath::Clamp<float>(NewLevel, 1, MaxLevel);
+	BaseStat = UABGameSingleton::GetInstance().GetCharacterStat(CurrentLevel);
+	check(BaseStat.MaxHp > 0.f);
 }
 
 void UABCharacterStatComponent::SetCurrentHp(float NewHp)
 {
+	const int32 MaxHp = UABGameSingleton::GetInstance().GetCharacterStat(CurrentLevel).MaxHp;
 	CurrentHp = FMath::Clamp<float>(NewHp, 0.f, MaxHp);
 
 	// Hp 변경 콜백 호출
@@ -40,4 +36,13 @@ void UABCharacterStatComponent::SetCurrentHp(float NewHp)
 		// Hp 다 깎였을 때 콜백호출
 		OnHpZeroCallback.Broadcast();
 	}
+}
+
+float UABCharacterStatComponent::ApplyDamage(float& InDamage)
+{
+	const float PrevHp = CurrentHp;
+	InDamage = FMath::Clamp<float>(InDamage, 0.f, InDamage);
+	SetCurrentHp(PrevHp - InDamage);
+
+	return InDamage;
 }

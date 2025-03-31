@@ -116,4 +116,13 @@ protected:
 	void OnItemBoxTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepHitResult);
+
+/// Stage Stat
+public:
+	FORCEINLINE int32 GetCurrentStageNum() const { return CurrentStageNum; }
+	FORCEINLINE void SetCurrentStageNum(int32 NewStageNum) { CurrentStageNum = NewStageNum; }
+
+protected:
+	UPROPERTY(VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
+	int32 CurrentStageNum;
 };

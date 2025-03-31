@@ -3,6 +3,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Physics/ABCollision.h"
 #include "Character/ABCharacterNonPlayer.h"
+#include "Character/ABCharacterPlayer.h"
 #include "Engine/OverlapResult.h"
 #include "Item/ABItemBox.h"
 
@@ -79,6 +80,9 @@ AABStageGimmick::AABStageGimmick()
 		FVector ItemBoxLocation = StageMeshComponent->GetSocketLocation(SocketName) / 2;
 		ItemBoxLocationMap.Add(SocketName, ItemBoxLocation);
 	}
+
+	// Stage Stat
+	CurrentStageNum = 0;
 }
 
 // Unreal Editor에서 값 변경이 있을 때 호출되는 디버깅용 콜백
@@ -138,7 +142,15 @@ void AABStageGimmick::OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedC
 
 	if (bResult == false)
 	{
-		GetWorld()->SpawnActor<AABStageGimmick>(NewLocation, FRotator::ZeroRotator);
+		FTransform NewTransform(NewLocation);
+		AABStageGimmick* NewStageGimmick = GetWorld()->SpawnActorDeferred<AABStageGimmick>(
+			AABStageGimmick::StaticClass(), NewTransform);
+
+		if (NewStageGimmick)
+		{
+			NewStageGimmick->SetCurrentStageNum(CurrentStageNum + 1);
+			NewStageGimmick->FinishSpawning(NewTransform);
+		}
 	}
 }
 
@@ -249,14 +261,23 @@ void AABStageGimmick::OnSetState_Next()
 
 void AABStageGimmick::SpawnEnemy()
 {
-	const FVector SpawnLocation = GetActorLocation() + FVector::UpVector * 88.f;
 	// 지정된 클래스로 Enemy 소환
-	AActor* Actor = GetWorld()->SpawnActor(EnemyClass, &SpawnLocation, &FRotator::ZeroRotator);
-	AABCharacterNonPlayer* EnemyActor = Cast<AABCharacterNonPlayer>(Actor);
+	const FTransform SpawnTransform(GetActorLocation() + FVector::UpVector * 88.f);
+	// SpawnActorDeferred() -> SpawnActor()와 다르게 Actor를 즉시 Spawn하지 않고
+	// 필요한 추가 설정들을 모두 완료한 후에 Actor의 FinishSpawning() 함수를
+	// 수동으로 호출하여 최종적으로 Spawn을 완료하는 함수
+	// Actor가 Spawn되기전에 반드시 필요한 설정값들이 있을 경우 사용하면 좋다
+	AABCharacterNonPlayer* EnemyActor = GetWorld()->SpawnActorDeferred<AABCharacterNonPlayer>(
+		EnemyClass, SpawnTransform);
+
 	if (EnemyActor)
 	{
 		// UE가 제공하는 OnDestroyed Delegate에 OnEnemyDestroyed() 함수 bind
 		EnemyActor->OnDestroyed.AddDynamic(this, &AABStageGimmick::OnEnemyDestroyed);
+		// 현재 스테이지에 맞게 레벨 설정 (점점 증가)
+		EnemyActor->SetCharacterLevel(CurrentStageNum);
+		// 필요한 설정 모두 끝난 후 완전히 Spawn
+		EnemyActor->FinishSpawning(SpawnTransform);
 	}
 }
 
@@ -270,15 +291,23 @@ void AABStageGimmick::SpawnItemBoxes()
 {
 	for (const auto& It : ItemBoxLocationMap)
 	{
-		FVector SpawnLocation = GetActorLocation() + It.Value + FVector(0.f, 0.f, 30.f);
-		AActor* Actor = GetWorld()->SpawnActor(ItemBoxClass, &SpawnLocation, &FRotator::ZeroRotator);
-		AABItemBox* ItemBoxActor = Cast<AABItemBox>(Actor);
+		FTransform SpawnTransform(GetActorLocation() + It.Value + FVector(0.f, 0.f, 30.f));
+		AABItemBox* ItemBoxActor = GetWorld()->SpawnActorDeferred<AABItemBox>(ItemBoxClass, SpawnTransform);
 		if (ItemBoxActor)
 		{
 			ItemBoxActor->Tags.Add(It.Key);
 			ItemBoxActor->GetTriggerBox()->OnComponentBeginOverlap.AddDynamic(
 				this, &AABStageGimmick::OnItemBoxTriggerBeginOverlap);
 			ItemBoxes.Add(ItemBoxActor);
+		}
+	}
+
+	// ItemBox는 모든 값들이 반드시 설정된 후 Spawn되어야 함
+	for (const auto& ItemBoxActor : ItemBoxes)
+	{
+		if (ItemBoxActor.IsValid())
+		{
+			ItemBoxActor->FinishSpawning(ItemBoxActor.Get()->GetActorTransform());
 		}
 	}
 }

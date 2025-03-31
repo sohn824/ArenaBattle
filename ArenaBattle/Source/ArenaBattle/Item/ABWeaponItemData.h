@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Item/ABItemDataBase.h"
+#include "DataTable/ABCharacterStat.h"
 #include "ABWeaponItemData.generated.h"
 
 /**
@@ -25,4 +26,8 @@ public:
 	// 애셋 문자열 정보만 가지고 있다가 필요할 때만 로딩하도록 TSoftObjectPtr로 선언함(소프트 레퍼런싱)
 	UPROPERTY(EditAnywhere, Category = Weapon)
 	TSoftObjectPtr<USkeletalMesh> WeaponMesh;
+
+	// 이 아이템을 장착함으로써 캐릭터에 더해질 스탯 데이터
+	UPROPERTY(EditAnywhere, Category = Stat)
+	FABCharacterStat ModifierStat;
 };

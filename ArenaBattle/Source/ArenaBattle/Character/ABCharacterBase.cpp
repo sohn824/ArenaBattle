@@ -174,7 +174,7 @@ void AABCharacterBase::ComboActionBeginCallback()
 
 	// Animation Setting
 	// 애니메이션을 관리하는 UAnimInstance 클래스는 SkeletalMesh에 붙어있음
-	const float AttackSpeedRate = 1.f;
+	const float AttackSpeedRate = StatComponent->GetTotalStat().AttackSpeed;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(ComboActionMontage, AttackSpeedRate);
 
@@ -203,7 +203,7 @@ void AABCharacterBase::ResetComboCheckTimer()
 	int32 ArrayIndex = CurrentComboCount - 1;
 	ensure(ComboActionData->EffectiveFrameIndexes.IsValidIndex(ArrayIndex));
 
-	const float AttackSpeedRate = 1.f;
+	const float AttackSpeedRate = StatComponent->GetTotalStat().AttackSpeed;
 	const int ComboEffectiveFrameIndex = ComboActionData->EffectiveFrameIndexes[ArrayIndex];
 	// 콤보 입력을 넣을 수 있는 시간
 	float ComboEffectiveTime = ComboEffectiveFrameIndex / ComboActionData->AnimationFrameRate / AttackSpeedRate;
@@ -246,9 +246,8 @@ void AABCharacterBase::AttackHitCheck()
 	// 충돌 함수에 전달되는 매개변수 구조체
 	FCollisionQueryParams CollisionParams(SCENE_QUERY_STAT(Attack), false, this);
 
-	const float AttackRange = 40.f;
-	const float AttackRadius = 50.f;
-	const float AttackDamage = 30.f;
+	const float& AttackRange = StatComponent->GetTotalStat().AttackRange;
+	const float& AttackDamage = StatComponent->GetTotalStat().AttackDamage;
 	const FVector StartPos = GetActorLocation()
 		+ GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
 	const FVector EndPos = StartPos + GetActorForwardVector() * AttackRange;
@@ -256,6 +255,7 @@ void AABCharacterBase::AttackHitCheck()
 	// 특정 채널을 사용하여 충돌 검사를 수행
 	// StartPos에서 EndPos까지 지정된 충돌체를 이동시키면서 충돌을 감지하고
 	// FHitResult 구조체에 충돌 관련 정보들을 담아 반환함
+	const float AttackRadius = 50.f;
 	bool bHitSucceed = GetWorld()->SweepSingleByChannel(OutHitResult, StartPos, EndPos,
 		FQuat::Identity, CCHANNEL_ABACTION, FCollisionShape::MakeSphere(AttackRadius), CollisionParams);
 	if (bHitSucceed)
@@ -303,12 +303,22 @@ void AABCharacterBase::PlayDeadAnimation()
 	AnimInstance->Montage_Play(DeadMontage, 1.f);
 }
 
+int32 AABCharacterBase::GetCharacterLevel()
+{
+	return StatComponent->GetCurrentLevel();
+}
+
+void AABCharacterBase::SetCharacterLevel(int32 NewLevel)
+{
+	StatComponent->SetCurrentLevelWithStat(NewLevel);
+}
+
 void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
 {
 	UABHpBarWidget* HpBarWidget = Cast<UABHpBarWidget>(InUserWidget);
 	if (HpBarWidget)
 	{
-		const float& MaxHp = StatComponent->GetMaxHp();
+		const float& MaxHp = StatComponent->GetTotalStat().MaxHp;
 		const float& CurrentHp = StatComponent->GetCurrentHp();
 		HpBarWidget->SetMaxHp(MaxHp);
 		HpBarWidget->UpdateHpBar(CurrentHp);
@@ -353,6 +363,8 @@ void AABCharacterBase::EquipWeapon(UABItemDataBase* InItemData)
 	}
 
 	WeaponMesh->SetSkeletalMesh(WeaponItemData->WeaponMesh.Get());
+
+	StatComponent->SetModifierStat(WeaponItemData->ModifierStat);
 }
 
 void AABCharacterBase::DrinkPotion(UABItemDataBase* InItemData)

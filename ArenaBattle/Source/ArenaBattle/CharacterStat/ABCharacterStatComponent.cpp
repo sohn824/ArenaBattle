@@ -3,8 +3,9 @@
 
 UABCharacterStatComponent::UABCharacterStatComponent()
 {
-	CurrentLevel = 1;
 	CurrentHp = 100.f;
+	CurrentLevel = 1;
+	AttackRadius = 50.f;
 }
 
 void UABCharacterStatComponent::BeginPlay()

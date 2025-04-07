@@ -1,10 +1,15 @@
 #include "ABCharacterNonPlayer.h"
 #include "Engine/AssetManager.h"
+#include "AI/ABAIController.h"
+#include "CharacterStat/ABCharacterStatComponent.h"
 
 AABCharacterNonPlayer::AABCharacterNonPlayer()
 {
 	// SkeletalMesh가 로딩이 완료될 때까지 숨김
 	GetMesh()->SetHiddenInGame(true);
+
+	AIControllerClass = AABAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void AABCharacterNonPlayer::PostInitializeComponents()
@@ -48,4 +53,42 @@ void AABCharacterNonPlayer::OnNpcMeshLoadCompleted()
 	}
 
 	NpcMeshLoadHandle->ReleaseHandle();
+}
+
+float AABCharacterNonPlayer::GetAIPatrolRadius()
+{
+	return 800.f;
+}
+
+float AABCharacterNonPlayer::GetAIDetectRange()
+{
+	return 400.f;
+}
+
+float AABCharacterNonPlayer::GetAIAttackRange()
+{
+	return StatComponent->GetTotalStat().AttackRange + (StatComponent->GetAttackRadius() * 2);
+}
+
+float AABCharacterNonPlayer::GetAITurnSpeed()
+{
+	return 2.f;
+}
+
+void AABCharacterNonPlayer::SetAICharacterAttackFinishedDelegate(const FOnAICharacterAttackFinished& InDelegate)
+{
+	OnAttackFinished = InDelegate;
+}
+
+void AABCharacterNonPlayer::AttackByAI()
+{
+	ComboActionProcess();
+}
+
+void AABCharacterNonPlayer::OnComboActionEnd()
+{
+	Super::OnComboActionEnd();
+
+	// OnAttackFinished 델리게이트가 등록되어 있다면 추가로 호출해줌
+	OnAttackFinished.ExecuteIfBound();
 }

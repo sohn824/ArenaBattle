@@ -34,6 +34,9 @@ public:
 	FORCEINLINE float GetCurrentLevel() const { return CurrentLevel; }
 	void SetCurrentLevelWithStat(int32 NewLevel);
 
+	// 공격 판정을 할 가상의 구체의 반지름
+	FORCEINLINE float GetAttackRadius() const { return AttackRadius; }
+
 	FORCEINLINE FABCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
 	FORCEINLINE void SetModifierStat(FABCharacterStat& NewModifierStat) { ModifierStat = NewModifierStat; }
 
@@ -47,6 +50,9 @@ protected:
 
 	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat)
 	int32 CurrentLevel;
+
+	UPROPERTY(VisibleInstanceOnly, Category = Stat)
+	float AttackRadius;
 
 	// 캐릭터 자체 기본 스탯 데이터
 	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))

@@ -12,7 +12,12 @@ public class ArenaBattle : ModuleRules
 		PublicIncludePaths.AddRange(new string[] { "ArenaBattle" });
 		
 		// UMG - UI 관련 기능 사용하기 위해 추가 필요한 모듈 (Widget들)
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG" });
+		// NavigationSystem - NavMesh, PathFinding 기능 사용하기 위해 추가 필요
+		// AIModule - AIController, BehaviorTree 기능 사용하기 위해 추가 필요
+		// GameplayTasks - 언리얼 엔진에서 제공하는 UGameplayTask 기능 사용하기 위해 추가 필요
+		PublicDependencyModuleNames.AddRange(new string[] {
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG",
+			"NavigationSystem", "AIModule", "GameplayTasks" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 	}

@@ -51,9 +51,15 @@ protected:
 protected:
 	void ComboActionProcess();
 
-	// 애니메이션 몽타주에서 호출할 콜백 함수들
+	// 애니메이션 몽타주가 시작될 때 호출할 콜백 함수
 	void ComboActionBeginCallback();
-	void ComboActionEndCallback(class UAnimMontage* TargetMontage, bool bIsProperlyEnded); // FOnMontageEnded 델리게이트 형식 맞춤
+
+	// 애니메이션 몽타주가 끝날 때 호출할 콜백 함수 (FOnMontageEnded 델리게이트 형식 맞춤)
+	void ComboActionEndCallback(class UAnimMontage* TargetMontage, bool bIsProperlyEnded);
+
+	// ComboActionEndCallback이 호출될 때 추가로 호출해 줄 콜백 함수
+	// 필요할 경우 이 클래스를 상속받은 클래스들이 이 함수를 override하여 각자 다른 처리를 할 수 있도록 하기 위하여 추가
+	virtual void OnComboActionEnd();
 
 	// 콤보 입력 체크 함수들
 	void ResetComboCheckTimer();

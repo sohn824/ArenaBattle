@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,9 +11,6 @@ class UABCharacterItemInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class ARENABATTLE_API IABCharacterItemInterface
 {
 	GENERATED_BODY()

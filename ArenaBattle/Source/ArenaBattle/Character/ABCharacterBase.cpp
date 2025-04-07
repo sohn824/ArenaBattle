@@ -196,6 +196,13 @@ void AABCharacterBase::ComboActionEndCallback(class UAnimMontage* TargetMontage,
 	
 	// 다시 방향키 입력 받을 수 있도록 MovementMode 복구
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+	OnComboActionEnd();
+}
+
+void AABCharacterBase::OnComboActionEnd()
+{
+
 }
 
 void AABCharacterBase::ResetComboCheckTimer()
@@ -255,7 +262,7 @@ void AABCharacterBase::AttackHitCheck()
 	// 특정 채널을 사용하여 충돌 검사를 수행
 	// StartPos에서 EndPos까지 지정된 충돌체를 이동시키면서 충돌을 감지하고
 	// FHitResult 구조체에 충돌 관련 정보들을 담아 반환함
-	const float AttackRadius = 50.f;
+	const float AttackRadius = StatComponent->GetAttackRadius();
 	bool bHitSucceed = GetWorld()->SweepSingleByChannel(OutHitResult, StartPos, EndPos,
 		FQuat::Identity, CCHANNEL_ABACTION, FCollisionShape::MakeSphere(AttackRadius), CollisionParams);
 	if (bHitSucceed)

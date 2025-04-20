@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Character/ABCharacterPlayer.h"
 #include "Character/ABCharacterControlData.h"
 #include "Camera/CameraComponent.h"
@@ -7,6 +5,8 @@
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "UI/ABHUDWidget.h"
+#include "CharacterStat/ABCharacterStatComponent.h"
 
 AABCharacterPlayer::AABCharacterPlayer()
 {
@@ -209,4 +209,21 @@ void AABCharacterPlayer::QuaterMove(const FInputActionValue& InputActionValue)
 void AABCharacterPlayer::Attack()
 {
 	ComboActionProcess();
+}
+
+void AABCharacterPlayer::SetupHUDWidget(UABHUDWidget* InHUDWidget)
+{
+	if (InHUDWidget == nullptr)
+	{
+		return;
+	}
+
+	InHUDWidget->UpdateCharacterStatWidget(
+		StatComponent->GetBaseStat(), StatComponent->GetModifierStat());
+	InHUDWidget->UpdateHpBarWidget(StatComponent->GetCurrentHp());
+
+	// HUD Widget에 스탯이 변동됐음을 알려줄 Delegate 등록
+	StatComponent->OnStatChangedCallback.AddUObject(InHUDWidget, &UABHUDWidget::UpdateCharacterStatWidget);
+	// HUD Widget에 HP가 변동됐음을 알려줄 Delegate 등록
+	StatComponent->OnHpChangedCallback.AddUObject(InHUDWidget, &UABHUDWidget::UpdateHpBarWidget);
 }

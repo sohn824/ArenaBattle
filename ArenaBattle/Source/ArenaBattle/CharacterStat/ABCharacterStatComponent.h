@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,7 +7,8 @@
 
 // 콜백 등록을 위한 델리게이트 선언부
 DECLARE_MULTICAST_DELEGATE(FOnHpZeroDelegate);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHpChangedDelegate, float);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnHpChangedDelegate, float/*NewHp*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStatChangedDelegate, const FABCharacterStat&/*BaseStat*/, const FABCharacterStat&/*ModifierStat*/);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARENABATTLE_API UABCharacterStatComponent : public UActorComponent
@@ -17,16 +16,15 @@ class ARENABATTLE_API UABCharacterStatComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
 	UABCharacterStatComponent();
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	virtual void InitializeComponent() override;
 
 public:
 	FOnHpZeroDelegate OnHpZeroCallback;
 	FOnHpChangedDelegate OnHpChangedCallback;
+	FOnStatChangedDelegate OnStatChangedCallback;
 
 	FORCEINLINE float GetCurrentHp() const { return CurrentHp; }
 	void SetCurrentHp(float NewHp);
@@ -37,9 +35,14 @@ public:
 	// 공격 판정을 할 가상의 구체의 반지름
 	FORCEINLINE float GetAttackRadius() const { return AttackRadius; }
 
+	// CharacterStat
+	FORCEINLINE const FABCharacterStat& GetBaseStat() const { return BaseStat; }
+	FORCEINLINE const FABCharacterStat& GetModifierStat() const { return ModifierStat; }
 	FORCEINLINE FABCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
-	FORCEINLINE void SetModifierStat(FABCharacterStat& NewModifierStat) { ModifierStat = NewModifierStat; }
+	void SetBaseStat(FABCharacterStat& NewBaseStat);
+	void SetModifierStat(FABCharacterStat& NewModifierStat);
 
+	// Damage 
 	float ApplyDamage(float& InDamage);
 
 protected:

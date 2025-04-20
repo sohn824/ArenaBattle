@@ -6,11 +6,15 @@ UABCharacterStatComponent::UABCharacterStatComponent()
 	CurrentHp = 100.f;
 	CurrentLevel = 1;
 	AttackRadius = 50.f;
+
+	// InitializeComponent 콜백을 호출시키기 위해 필요
+	// (호출 시점은 BeginPlay가 호출되기 이전)
+	bWantsInitializeComponent = true;
 }
 
-void UABCharacterStatComponent::BeginPlay()
+void UABCharacterStatComponent::InitializeComponent()
 {
-	Super::BeginPlay();
+	Super::InitializeComponent();
 
 	SetCurrentLevelWithStat(CurrentLevel);
 	SetCurrentHp(BaseStat.MaxHp);
@@ -20,8 +24,25 @@ void UABCharacterStatComponent::SetCurrentLevelWithStat(int32 NewLevel)
 {
 	const int32 MaxLevel = UABGameSingleton::GetInstance().CharacterMaxLevel;
 	CurrentLevel = FMath::Clamp<float>(NewLevel, 1, MaxLevel);
-	BaseStat = UABGameSingleton::GetInstance().GetCharacterStat(CurrentLevel);
-	check(BaseStat.MaxHp > 0.f);
+
+	FABCharacterStat NewBaseStat = UABGameSingleton::GetInstance().GetCharacterStat(CurrentLevel);
+	check(NewBaseStat.MaxHp > 0.f);
+
+	SetBaseStat(NewBaseStat);
+}
+
+void UABCharacterStatComponent::SetBaseStat(FABCharacterStat& NewBaseStat)
+{
+	BaseStat = NewBaseStat;
+
+	OnStatChangedCallback.Broadcast(BaseStat, ModifierStat);
+}
+
+void UABCharacterStatComponent::SetModifierStat(FABCharacterStat& NewModifierStat)
+{
+	ModifierStat = NewModifierStat;
+
+	OnStatChangedCallback.Broadcast(BaseStat, ModifierStat);
 }
 
 void UABCharacterStatComponent::SetCurrentHp(float NewHp)

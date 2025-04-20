@@ -25,11 +25,11 @@ void UABHpBarWidget::NativeConstruct()
 	}
 }
 
-void UABHpBarWidget::UpdateHpBar(float CurrentHp)
+void UABHpBarWidget::UpdateHpBar(float NewHp)
 {
 	ensure(MaxHp > 0.f);
 	ensure(HpProgressBar != nullptr);
 
-	float HpPercent = CurrentHp / MaxHp;
+	float HpPercent = NewHp / MaxHp;
 	HpProgressBar->SetPercent(HpPercent);
 }

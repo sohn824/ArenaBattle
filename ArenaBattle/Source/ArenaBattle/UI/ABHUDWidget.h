@@ -22,7 +22,7 @@ protected:
 
 public:
 	void UpdateCharacterStatWidget(const FABCharacterStat& BaseStat, const FABCharacterStat& ModifierStat);
-	void UpdateHpBarWidget(float NewHp);
+	void UpdateHpBarWidget(float NewCurrentHp, float NewMaxHp);
 
 protected:
 	UPROPERTY()

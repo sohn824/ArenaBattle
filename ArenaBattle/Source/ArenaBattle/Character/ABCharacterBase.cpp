@@ -10,6 +10,8 @@
 #include "UI/ABWidgetComponent.h"
 #include "UI/ABHpBarWidget.h"
 #include "Item/ABWeaponItemData.h"
+#include "Item/ABPotionItemData.h"
+#include "Item/ABScrollItemData.h"
 
 // Sets default values
 AABCharacterBase::AABCharacterBase()
@@ -128,8 +130,10 @@ void AABCharacterBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	// Hp가 0이 됐을 때 호출될 콜백 델리게이트에 Dead 애니메이션 재생 함수를 등록해둔다.
+	// Hp가 0이 됐을 때 호출될 OnHpZeroCallback 델리게이트에 Dead 애니메이션 재생 함수를 등록해둔다.
 	StatComponent->OnHpZeroCallback.AddUObject(this, &AABCharacterBase::SetDead);
+	// 스탯이 변경됐을 때 호출될 OnStatChangedCallback 델리게이트에 캐릭터 스탯 적용 함수를 등록해둔다.
+	StatComponent->OnStatChangedCallback.AddUObject(this, &AABCharacterBase::SetCharacterStat);
 }
 
 void AABCharacterBase::SetCharacterControlData(const UABCharacterControlData* CharacterControlData)
@@ -308,6 +312,11 @@ void AABCharacterBase::PlayDeadAnimation()
 	AnimInstance->Montage_Play(DeadMontage, 1.f);
 }
 
+float AABCharacterBase::GetCurrentHp()
+{
+	return StatComponent->GetCurrentHp();
+}
+
 int32 AABCharacterBase::GetCharacterLevel()
 {
 	return StatComponent->GetCurrentLevel();
@@ -318,6 +327,12 @@ void AABCharacterBase::SetCharacterLevel(int32 NewLevel)
 	StatComponent->SetCurrentLevelWithStat(NewLevel);
 }
 
+void AABCharacterBase::SetCharacterStat(const FABCharacterStat& BaseStat, const FABCharacterStat& ModifierStat)
+{
+	FABCharacterStat TotalStat = BaseStat + ModifierStat;
+	GetCharacterMovement()->MaxWalkSpeed = TotalStat.MovementSpeed;
+}
+
 void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
 {
 	UABHpBarWidget* HpBarWidget = Cast<UABHpBarWidget>(InUserWidget);
@@ -325,8 +340,7 @@ void AABCharacterBase::SetupCharacterWidget(UABUserWidget* InUserWidget)
 	{
 		const float& MaxHp = StatComponent->GetTotalStat().MaxHp;
 		const float& CurrentHp = StatComponent->GetCurrentHp();
-		HpBarWidget->SetMaxHp(MaxHp);
-		HpBarWidget->UpdateHpBar(CurrentHp);
+		HpBarWidget->UpdateHpBar(CurrentHp, MaxHp);
 
 		// HpChanged 콜백이 호출될 때마다 HpBarWidget도 같이 업데이트하도록
 		// UABHpBarWidget::UpdateHpBar 함수도 델리게이트에 등록
@@ -374,10 +388,26 @@ void AABCharacterBase::EquipWeapon(UABItemDataBase* InItemData)
 
 void AABCharacterBase::DrinkPotion(UABItemDataBase* InItemData)
 {
-	UE_LOG(LogTemp, Log, TEXT("Drink Potion"));
+	UABPotionItemData* PotionItemData = Cast<UABPotionItemData>(InItemData);
+	if (PotionItemData == nullptr)
+	{
+		return;
+	}
+
+	const int& CurrentHp = StatComponent->GetCurrentHp();
+	StatComponent->SetCurrentHp(CurrentHp + PotionItemData->HealAmount);
 }
 
 void AABCharacterBase::ReadScroll(UABItemDataBase* InItemData)
 {
-	UE_LOG(LogTemp, Log, TEXT("Read Scroll"));
+	UABScrollItemData* ScrollItemData = Cast<UABScrollItemData>(InItemData);
+	if (ScrollItemData == nullptr)
+	{
+		return;
+	}
+
+	FABCharacterStat NewBaseStat = StatComponent->GetBaseStat() + ScrollItemData->BonusBaseStat;
+	StatComponent->SetBaseStat(NewBaseStat);
+	// MaxHp 값이 업데이트 되었을 수 있으므로 OnHpChangedCallback 호출을 위해 같은 값으로 Hp 재설정
+	StatComponent->SetCurrentHp(StatComponent->GetCurrentHp());
 }

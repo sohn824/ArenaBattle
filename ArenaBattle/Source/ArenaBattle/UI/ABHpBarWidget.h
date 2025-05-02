@@ -1,14 +1,13 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 // UserWidget의 사용자 재정의 클래스
 #include "ABUserWidget.h"
+#include "DataTable/ABCharacterStat.h"
 #include "ABHpBarWidget.generated.h"
 
 /**
- * 
+ * 캐릭터 위에 붙어서 따라다니는 HpBar 위젯 클래스
  */
 UCLASS()
 class ARENABATTLE_API UABHpBarWidget : public UABUserWidget
@@ -23,12 +22,16 @@ protected:
 	virtual void NativeConstruct() override;
 
 public:
-	FORCEINLINE void SetMaxHp(float NewMaxHp) { MaxHp = NewMaxHp; }
-	void UpdateHpBar(float NewHp);
+	void UpdateHpBar(float NewCurrentHp, float NewMaxHp);
+	void UpdateHpStatTextBlock();
 
 protected:
 	UPROPERTY()
 	TObjectPtr<class UProgressBar> HpProgressBar;
+	UPROPERTY()
+	TObjectPtr<class UTextBlock> HpStatTextBlock;
+	UPROPERTY()
+	float CurrentHp;
 	UPROPERTY()
 	float MaxHp;
 };

@@ -72,21 +72,37 @@ void AABCharacterPlayer::BeginPlay()
 	Super::BeginPlay();
 
 	APlayerController* PlayerController = CastChecked<APlayerController>(GetController());
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-		PlayerController->GetLocalPlayer());
-
-	// 시점 관련 데이터 초기화 및 InputMappingContext 추가
-	if (Subsystem)
+	if (PlayerController)
 	{
-		UABCharacterControlData* CurrentCharacterControlData = CharacterControlDataMap[CurrentCharacterControlType];
-		if (CurrentCharacterControlData)
-		{
-			SetCharacterControlData(CurrentCharacterControlData);
-			Subsystem->ClearAllMappings();
-			Subsystem->AddMappingContext(CurrentCharacterControlData->InputMappingContext, 0);
+		EnableInput(PlayerController);
 
-			CurrentCharacterControlType = ECharacterControlType::QuaterView;
+		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
+			PlayerController->GetLocalPlayer());
+		// 시점 관련 데이터 초기화 및 InputMappingContext 추가
+		if (Subsystem)
+		{
+			UABCharacterControlData* CurrentCharacterControlData = CharacterControlDataMap[CurrentCharacterControlType];
+			if (CurrentCharacterControlData)
+			{
+				SetCharacterControlData(CurrentCharacterControlData);
+				Subsystem->ClearAllMappings();
+				Subsystem->AddMappingContext(CurrentCharacterControlData->InputMappingContext, 0);
+
+				CurrentCharacterControlType = ECharacterControlType::QuaterView;
+			}
 		}
+	}
+}
+
+void AABCharacterPlayer::SetDead()
+{
+	Super::SetDead();
+
+	// 죽었을 경우 더 이상 플레이어 input을 받지 않도록 함
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		DisableInput(PlayerController);
 	}
 }
 
@@ -220,7 +236,7 @@ void AABCharacterPlayer::SetupHUDWidget(UABHUDWidget* InHUDWidget)
 
 	InHUDWidget->UpdateCharacterStatWidget(
 		StatComponent->GetBaseStat(), StatComponent->GetModifierStat());
-	InHUDWidget->UpdateHpBarWidget(StatComponent->GetCurrentHp());
+	InHUDWidget->UpdateHpBarWidget(StatComponent->GetCurrentHp(), StatComponent->GetTotalStat().MaxHp);
 
 	// HUD Widget에 스탯이 변동됐음을 알려줄 Delegate 등록
 	StatComponent->OnStatChangedCallback.AddUObject(InHUDWidget, &UABHUDWidget::UpdateCharacterStatWidget);

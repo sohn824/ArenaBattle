@@ -47,11 +47,11 @@ void UABCharacterStatComponent::SetModifierStat(FABCharacterStat& NewModifierSta
 
 void UABCharacterStatComponent::SetCurrentHp(float NewHp)
 {
-	const int32 MaxHp = UABGameSingleton::GetInstance().GetCharacterStat(CurrentLevel).MaxHp;
-	CurrentHp = FMath::Clamp<float>(NewHp, 0.f, MaxHp);
+	const float MaxHp = GetTotalStat().MaxHp;
+	CurrentHp = FMath::Clamp(NewHp, 0, MaxHp);
 
 	// Hp 변경 콜백 호출
-	OnHpChangedCallback.Broadcast(CurrentHp);
+	OnHpChangedCallback.Broadcast(CurrentHp, MaxHp);
 	// Hp값이 부동 소수점이므로 Dead 체크를 위해 0.f대신 안전한 작은 값 사용
 	if (CurrentHp <= KINDA_SMALL_NUMBER)
 	{

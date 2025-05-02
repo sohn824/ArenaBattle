@@ -7,7 +7,7 @@
 
 // 콜백 등록을 위한 델리게이트 선언부
 DECLARE_MULTICAST_DELEGATE(FOnHpZeroDelegate);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHpChangedDelegate, float/*NewHp*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHpChangedDelegate, float/*NewCurrentHp*/, float/*NewMaxHp*/);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStatChangedDelegate, const FABCharacterStat&/*BaseStat*/, const FABCharacterStat&/*ModifierStat*/);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

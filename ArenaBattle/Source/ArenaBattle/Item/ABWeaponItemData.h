@@ -14,6 +14,8 @@ UCLASS()
 class ARENABATTLE_API UABWeaponItemData : public UABItemDataBase
 {
 	GENERATED_BODY()
+public:
+	UABWeaponItemData();
 
 public:
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override

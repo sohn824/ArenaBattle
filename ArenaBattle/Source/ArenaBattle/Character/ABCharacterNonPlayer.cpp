@@ -28,6 +28,13 @@ void AABCharacterNonPlayer::SetDead()
 {
 	Super::SetDead();
 
+	// 죽었을 경우 더 이상 BehaviorTree가 실행되지 않도록 멈춤
+	AABAIController* ABAIController = Cast<AABAIController>(GetController());
+	if (ABAIController)
+	{
+		ABAIController->StopAI();
+	}
+
 	// NonPlayer 캐릭터는 죽은 후 일정 시간이 지나면 사라지도록 함
 	const float DestroyDelayTime = 5.f;
 	FTimerHandle DeadTimerHandle;

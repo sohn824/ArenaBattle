@@ -5,6 +5,7 @@
 #include "Interface/ABAnimationAttackInterface.h"
 #include "Interface/ABCharacterWidgetInterface.h"
 #include "Interface/ABCharacterItemInterface.h"
+#include "DataTable/ABCharacterStat.h"
 #include "ABCharacterBase.generated.h"
 
 UENUM()
@@ -93,8 +94,10 @@ protected:
 
 /// Character Stat Section
 public:
+	float GetCurrentHp();
 	int32 GetCharacterLevel();
 	void SetCharacterLevel(int32 NewLevel);
+	void SetCharacterStat(const FABCharacterStat& BaseStat, const FABCharacterStat& ModifierStat);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))

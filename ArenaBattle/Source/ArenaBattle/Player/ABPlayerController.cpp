@@ -10,6 +10,24 @@ AABPlayerController::AABPlayerController()
 	}
 }
 
+void AABPlayerController::OnPlayerScoreChanged(int32 NewScore)
+{
+	// 블루프린트에서 사용할 콜백 함수도 같이 호출해줌
+	K2_OnPlayerScoreChanged(NewScore);
+}
+
+void AABPlayerController::OnGameCleared()
+{
+	// 블루프린트에서 사용할 콜백 함수도 같이 호출해줌
+	K2_OnGameCleared();
+}
+
+void AABPlayerController::OnGameOvered()
+{
+	// 블루프린트에서 사용할 콜백 함수도 같이 호출해줌
+	K2_OnGameOvered();
+}
+
 void AABPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -18,10 +36,11 @@ void AABPlayerController::BeginPlay()
 	FInputModeGameOnly InputModeGameOnly;
 	SetInputMode(InputModeGameOnly);
 
+	// 아래 기능은 블루프린트로 이관
 	// 지정해놓은 위젯 블루프린트 클래스로 위젯 생성
-	ABHUDWidgetPtr = CreateWidget<UABHUDWidget>(this, ABHUDWidgetClass);
+	/*ABHUDWidgetPtr = CreateWidget<UABHUDWidget>(this, ABHUDWidgetClass);
 	if (ABHUDWidgetPtr)
 	{
 		ABHUDWidgetPtr->AddToViewport();
-	}
+	}*/
 }

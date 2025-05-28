@@ -6,6 +6,7 @@
 #include "Character/ABCharacterPlayer.h"
 #include "Engine/OverlapResult.h"
 #include "Item/ABItemBox.h"
+#include "Game/ABGameMode.h"
 
 AABStageGimmick::AABStageGimmick()
 {
@@ -283,6 +284,16 @@ void AABStageGimmick::SpawnEnemy()
 
 void AABStageGimmick::OnEnemyDestroyed(AActor* DestroyedActor)
 {
+	AABGameMode* ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+	if (ABGameMode)
+	{
+		ABGameMode->OnPlayerScoreChanged(CurrentStageNum);
+		if (ABGameMode->IsGameCleared())
+		{
+			return;
+		}
+	}
+
 	// 적이 죽으면 STATE_REWARD로 이동
 	SetState(EStageState::STATE_REWARD);
 }

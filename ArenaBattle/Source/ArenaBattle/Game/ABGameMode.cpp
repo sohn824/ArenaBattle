@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Game/ABGameMode.h"
 #include "Player/ABPlayerController.h"
 
@@ -18,9 +16,49 @@ AABGameMode::AABGameMode()
 		// GameMode에서 사용할 DefaultPawn 클래스 설정
 		DefaultPawnClass = PawnClassRef.Class;
 	}
+
+	NeedScore = 3;
+	CurrentScore = 0;
+	bIsCleared = false;
 }
 
-AABGameMode::~AABGameMode()
+void AABGameMode::OnPlayerScoreChanged(int32 NewScore)
 {
+	CurrentScore = NewScore;
 
+	// 싱글 플레이기 때문에 첫번째 플레이어만 고려
+	AABPlayerController* ABPlayerController = Cast<AABPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (ABPlayerController == nullptr)
+	{
+		return;
+	}
+
+	ABPlayerController->OnPlayerScoreChanged(NewScore);
+
+	if (CurrentScore >= NeedScore)
+	{
+		bIsCleared = true;
+		ABPlayerController->OnGameCleared();
+	}
+	else
+	{
+		bIsCleared = false;
+	}
+}
+
+void AABGameMode::OnPlayerDead()
+{
+	// 싱글 플레이기 때문에 첫번째 플레이어만 고려
+	AABPlayerController* ABPlayerController = Cast<AABPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (ABPlayerController == nullptr)
+	{
+		return;
+	}
+
+	ABPlayerController->OnGameOvered();
+}
+
+bool AABGameMode::IsGameCleared()
+{
+	return bIsCleared;
 }

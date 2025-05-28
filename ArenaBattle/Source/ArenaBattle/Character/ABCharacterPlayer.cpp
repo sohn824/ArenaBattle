@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "UI/ABHUDWidget.h"
 #include "CharacterStat/ABCharacterStatComponent.h"
+#include "Game/ABGameMode.h"
 
 AABCharacterPlayer::AABCharacterPlayer()
 {
@@ -103,6 +104,12 @@ void AABCharacterPlayer::SetDead()
 	if (PlayerController)
 	{
 		DisableInput(PlayerController);
+
+		AABGameMode* ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+		if (ABGameMode)
+		{
+			ABGameMode->OnPlayerDead();
+		}
 	}
 }
 
